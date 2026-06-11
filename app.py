@@ -25,7 +25,7 @@ st.markdown("이미지를 업로드하면 AI가 정상/질소결핍 여부를 �
 
 # ── 모델 로드 ─────────────────────────────────────────────
 MODEL_PATH = "best_model_nobg.pth"
-GDRIVE_ID  = "1vivDfBxh-kV7G_GIGqfi6l647WDDWlEx"
+GDRIVE_ID = "1DXDR213nCPAWMqe8ZMFu2baJVRMLJYsO"
 CLASSES    = ['nitrogen_deficient', 'normal']
 
 @st.cache_resource
