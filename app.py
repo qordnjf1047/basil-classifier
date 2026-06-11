@@ -8,7 +8,7 @@ import io
 import os
 import gdown
 from torchvision import transforms
-from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam import GradCAMPlusPlus
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from rembg import remove
@@ -61,7 +61,7 @@ def remove_bg(pil_img):
 
 def get_gradcam(tensor, pred_idx):
     target_layers = [model.conv_head]
-    cam = GradCAM(model=model, target_layers=target_layers)
+    cam = GradCAMPlusPlus(model=model, target_layers=target_layers)
     grayscale = cam(input_tensor=tensor, targets=[ClassifierOutputTarget(pred_idx)])
     return grayscale[0]
 
