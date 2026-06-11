@@ -1,0 +1,10 @@
+streamlit
+torch
+torchvision
+timm
+Pillow>=12.1.0,<13.0.0
+numpy
+gdown
+rembg
+onnxruntime
+grad-cam
