@@ -7,5 +7,3 @@ numpy
 gdown
 rembg
 onnxruntime
-grad-cam
-opencv-python-headless==4.8.1.78
