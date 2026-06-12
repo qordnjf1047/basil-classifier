@@ -7,3 +7,5 @@ numpy
 gdown
 rembg
 onnxruntime
+grad-cam
+opencv-python-headless
