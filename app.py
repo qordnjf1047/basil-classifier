@@ -79,4 +79,15 @@ if uploaded:
 
     color = "green" if pred == "normal" else "red"
     label = "✅ 정상" if pred == "normal" else "⚠️ 질소결핍"
-    st.markdown(f"## <span style='color:{color}'>{label} ({conf:.1f}%)</span>", unsafe_allow
+    st.markdown(f"## <span style='color:{color}'>{label} ({conf:.1f}%)</span>", unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(nobg, caption="배경 제거 이미지")
+    with col2:
+        st.image(cam, caption="GradCAM++ (AI 주목 영역)")
+
+    st.markdown("### 클래스별 확률")
+    for i, cls in enumerate(CLASSES):
+        label_kr = "정상" if cls == "normal" else "질소결핍"
+        st.progress(int(probs[i].item() * 100), text=f"{label_kr}: {probs[i].item()*100:.1f}%")
