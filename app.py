@@ -8,9 +8,9 @@ import io
 import os
 import gdown
 from torchvision import transforms
-from pytorch_grad_cam import GradCAMPlusPlus
-from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
-from pytorch_grad_cam.utils.image import show_cam_on_image
+from torchcam.methods import GradCAMpp
+from torchcam.utils import overlay_mask
+from torchvision.transforms.functional import to_pil_image
 from rembg import remove
 
 st.set_page_config(page_title="바질 질소결핍 진단기", page_icon="🌿", layout="centered")
@@ -50,11 +50,17 @@ def remove_bg(pil_img):
     bg.paste(img, mask=img.split()[3])
     return bg.convert("RGB")
 
-def get_gradcam(tensor, pred_idx):
-    target_layers = [model.conv_head]
-    cam = GradCAMPlusPlus(model=model, target_layers=target_layers)
-    grayscale = cam(input_tensor=tensor, targets=[ClassifierOutputTarget(pred_idx)])
-    return grayscale[0]
+def get_gradcam(nobg_img, tensor, pred_idx):
+    cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
+    out = model(tensor)
+    activation_map = cam_extractor(pred_idx, out)
+    cam_extractor.remove_hooks()
+    result = overlay_mask(
+        to_pil_image(eval_transform(nobg_img)),
+        to_pil_image(activation_map[0].squeeze(0), mode='F'),
+        alpha=0.5
+    )
+    return np.array(result)
 
 def predict(pil_img):
     nobg = remove_bg(pil_img)
@@ -63,9 +69,9 @@ def predict(pil_img):
         probs = F.softmax(model(tensor), dim=1)[0]
     pred_idx = probs.argmax().item()
     conf = probs.max().item() * 100
-    img_np = np.array(nobg.resize((300, 300))) / 255.0
-    cam_map = get_gradcam(eval_transform(nobg).unsqueeze(0).to(device), pred_idx)
-    cam_overlay = show_cam_on_image(img_np.astype(np.float32), cam_map, use_rgb=True)
+    tensor_grad = eval_transform(nobg).unsqueeze(0).to(device)
+    tensor_grad.requires_grad_(True)
+    cam_overlay = get_gradcam(nobg, tensor_grad, pred_idx)
     return CLASSES[pred_idx], conf, probs, nobg, cam_overlay
 
 uploaded = st.file_uploader("바질 이미지 업로드", type=["jpg", "jpeg", "png"])
