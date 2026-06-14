@@ -50,50 +50,31 @@ def remove_bg(pil_img):
     bg.paste(img, mask=img.split()[3])
     return bg.convert("RGB")
 
-def get_gradcam(nobg_img, tensor, pred_idx):
-    model.zero_grad()
-    cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
-    
-    tensor = tensor.clone().detach().requires_grad_(True)
-    out = model(tensor)
-    
-    activation_map = cam_extractor(pred_idx, out)
-    cam_extractor.remove_hooks()
-    result = overlay_mask(
-        to_pil_image(eval_transform(nobg_img)),
-        to_pil_image(activation_map[0].squeeze(0), mode='F'),
-        alpha=0.5
-    )
-    return np.array(result)
-    return np.array(result)
-def get_gradcam(nobg_img, tensor, pred_idx):
-    cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
-    out = model(tensor)
-    activation_map = cam_extractor(pred_idx, out)
-    cam_extractor.remove_hooks()
-    result = overlay_mask(
-        to_pil_image(eval_transform(nobg_img)),
-        to_pil_image(activation_map[0].squeeze(0), mode='F'),
-        alpha=0.5
-    )
-    return np.array(result)
-
 def predict(pil_img):
     nobg = remove_bg(pil_img)
     tensor = eval_transform(nobg).unsqueeze(0).to(device)
-    with torch.no_grad():
-        probs = F.softmax(model(tensor), dim=1)[0]
-    pred_idx = probs.argmax().item()
-    conf = probs.max().item() * 100
+
+    cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
 
     with torch.enable_grad():
         for p in model.parameters():
             p.requires_grad_(True)
-        tensor_grad = eval_transform(nobg).unsqueeze(0).to(device)
-        tensor_grad.requires_grad_(True)
-        cam_overlay = get_gradcam(nobg, tensor_grad, pred_idx)
+        tensor.requires_grad_(True)
+        out = model(tensor)
+        probs = F.softmax(out, dim=1)[0]
+        pred_idx = probs.argmax().item()
+        conf = probs.max().item() * 100
+        activation_map = cam_extractor(pred_idx, out)
+        cam_extractor.remove_hooks()
 
-    return CLASSES[pred_idx], conf, probs, nobg, cam_overlay
+    result = overlay_mask(
+        to_pil_image(eval_transform(nobg)),
+        to_pil_image(activation_map[0].squeeze(0), mode='F'),
+        alpha=0.5
+    )
+    cam_overlay = np.array(result)
+
+    return CLASSES[pred_idx], conf, probs.detach(), nobg, cam_overlay
 
 uploaded = st.file_uploader("바질 이미지 업로드", type=["jpg", "jpeg", "png"])
 
