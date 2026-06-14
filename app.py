@@ -80,12 +80,14 @@ def predict(pil_img):
         probs = F.softmax(model(tensor), dim=1)[0]
     pred_idx = probs.argmax().item()
     conf = probs.max().item() * 100
-   with torch.enable_grad():
+
+    with torch.enable_grad():
         for p in model.parameters():
             p.requires_grad_(True)
         tensor_grad = eval_transform(nobg).unsqueeze(0).to(device)
         tensor_grad.requires_grad_(True)
         cam_overlay = get_gradcam(nobg, tensor_grad, pred_idx)
+
     return CLASSES[pred_idx], conf, probs, nobg, cam_overlay
 
 uploaded = st.file_uploader("바질 이미지 업로드", type=["jpg", "jpeg", "png"])
