@@ -51,6 +51,9 @@ def remove_bg(pil_img):
     return bg.convert("RGB")
 
 def predict(pil_img):
+    torch.manual_seed(42)
+    np.random.seed(42)
+    nobg = remove_bg(pil_img)
     nobg = remove_bg(pil_img)
     tensor = eval_transform(nobg).unsqueeze(0).to(device)
     cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
