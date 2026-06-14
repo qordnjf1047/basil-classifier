@@ -61,6 +61,17 @@ def get_gradcam(nobg_img, tensor, pred_idx):
         alpha=0.5
     )
     return np.array(result)
+def get_gradcam(nobg_img, tensor, pred_idx):
+    cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
+    out = model(tensor)
+    activation_map = cam_extractor(pred_idx, out)
+    cam_extractor.remove_hooks()
+    result = overlay_mask(
+        to_pil_image(eval_transform(nobg_img)),
+        to_pil_image(activation_map[0].squeeze(0), mode='F'),
+        alpha=0.5
+    )
+    return np.array(result)
 
 def predict(pil_img):
     nobg = remove_bg(pil_img)
