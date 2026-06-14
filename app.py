@@ -49,6 +49,7 @@ def remove_bg(pil_img):
     bg = Image.new("RGBA", img.size, (0, 0, 0, 255))
     bg.paste(img, mask=img.split()[3])
     return bg.convert("RGB")
+
 def predict(pil_img):
     torch.manual_seed(42)
     np.random.seed(42)
@@ -74,12 +75,15 @@ def predict(pil_img):
     bg_black_img = Image.fromarray(img_np)
 
     result = overlay_mask(
-        bg_black_img,  # ← eval_transform(nobg) 대신 검정배경 처리된 이미지 사용
+        bg_black_img,
         to_pil_image(activation_map[0].squeeze(0), mode='F'),
         alpha=0.5
     )
     cam_overlay = np.array(result)
     return CLASSES[pred_idx], conf, probs.detach(), nobg, cam_overlay
+
+uploaded = st.file_uploader("바질 이미지 업로드", type=["jpg", "jpeg", "png"])
+
 if uploaded:
     img = Image.open(uploaded).convert("RGB")
     st.image(img, caption="업로드된 이미지", use_column_width=True)
