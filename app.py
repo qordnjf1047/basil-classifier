@@ -51,8 +51,12 @@ def remove_bg(pil_img):
     return bg.convert("RGB")
 
 def get_gradcam(nobg_img, tensor, pred_idx):
+    model.zero_grad()
     cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
+    
+    tensor = tensor.clone().detach().requires_grad_(True)
     out = model(tensor)
+    
     activation_map = cam_extractor(pred_idx, out)
     cam_extractor.remove_hooks()
     result = overlay_mask(
@@ -60,6 +64,7 @@ def get_gradcam(nobg_img, tensor, pred_idx):
         to_pil_image(activation_map[0].squeeze(0), mode='F'),
         alpha=0.5
     )
+    return np.array(result)
     return np.array(result)
 def get_gradcam(nobg_img, tensor, pred_idx):
     cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
