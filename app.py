@@ -49,12 +49,11 @@ def remove_bg(pil_img):
     bg = Image.new("RGBA", img.size, (0, 0, 0, 255))
     bg.paste(img, mask=img.split()[3])
     return bg.convert("RGB")
-
 def predict(pil_img):
     torch.manual_seed(42)
     np.random.seed(42)
     nobg = remove_bg(pil_img)
-    nobg = remove_bg(pil_img)
+
     tensor = eval_transform(nobg).unsqueeze(0).to(device)
     cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
     with torch.enable_grad():
@@ -66,16 +65,21 @@ def predict(pil_img):
         pred_idx = probs.argmax().item()
         conf = probs.max().item() * 100
         activation_map = cam_extractor(pred_idx, out)
+
+    # ✅ 배경을 검정으로 통일한 이미지로 합성
+    nobg_resized = nobg.resize((300, 300))
+    img_np = np.array(nobg_resized)
+    mask = (img_np[:,:,0] < 30) & (img_np[:,:,1] < 30) & (img_np[:,:,2] < 30)
+    img_np[mask] = [0, 0, 0]
+    bg_black_img = Image.fromarray(img_np)
+
     result = overlay_mask(
-        to_pil_image(eval_transform(nobg)),
+        bg_black_img,  # ← eval_transform(nobg) 대신 검정배경 처리된 이미지 사용
         to_pil_image(activation_map[0].squeeze(0), mode='F'),
         alpha=0.5
     )
     cam_overlay = np.array(result)
     return CLASSES[pred_idx], conf, probs.detach(), nobg, cam_overlay
-
-
-uploaded = st.file_uploader("바질 이미지 업로드", type=["jpg", "jpeg", "png"])
 if uploaded:
     img = Image.open(uploaded).convert("RGB")
     st.image(img, caption="업로드된 이미지", use_column_width=True)
