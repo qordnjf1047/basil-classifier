@@ -53,9 +53,7 @@ def remove_bg(pil_img):
 def predict(pil_img):
     nobg = remove_bg(pil_img)
     tensor = eval_transform(nobg).unsqueeze(0).to(device)
-
     cam_extractor = GradCAMpp(model, target_layer=model.conv_head)
-
     with torch.enable_grad():
         for p in model.parameters():
             p.requires_grad_(True)
@@ -65,19 +63,16 @@ def predict(pil_img):
         pred_idx = probs.argmax().item()
         conf = probs.max().item() * 100
         activation_map = cam_extractor(pred_idx, out)
-        cam_extractor.remove_hooks()
-
     result = overlay_mask(
         to_pil_image(eval_transform(nobg)),
         to_pil_image(activation_map[0].squeeze(0), mode='F'),
         alpha=0.5
     )
     cam_overlay = np.array(result)
-
     return CLASSES[pred_idx], conf, probs.detach(), nobg, cam_overlay
 
-uploaded = st.file_uploader("바질 이미지 업로드", type=["jpg", "jpeg", "png"])
 
+uploaded = st.file_uploader("바질 이미지 업로드", type=["jpg", "jpeg", "png"])
 if uploaded:
     img = Image.open(uploaded).convert("RGB")
     st.image(img, caption="업로드된 이미지", use_column_width=True)
